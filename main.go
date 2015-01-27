@@ -106,6 +106,15 @@ func DecodeSimpleXorCipher(cipherHex []byte) Candidates {
 	return candidates
 }
 
+func RepeatingKeyXOR(src []byte, key []byte) []byte {
+	dst := make([]byte, len(src))
+	for i, b := range src {
+		keyidx := i % len(key)
+		dst[i] = b ^ key[keyidx]
+	}
+	return dst
+}
+
 func (a Candidates) Top(count int) Candidates {
 	sort.Sort(sort.Reverse(a))
 	return a[:count]
