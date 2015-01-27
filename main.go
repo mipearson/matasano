@@ -16,11 +16,11 @@ type Candidate struct {
 	cipher    []byte
 }
 
-type byScore []Candidate
+type Candidates []Candidate
 
-func (a byScore) Len() int           { return len(a) }
-func (a byScore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byScore) Less(i, j int) bool { return a[i].Score() < a[j].Score() }
+func (a Candidates) Len() int           { return len(a) }
+func (a Candidates) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a Candidates) Less(i, j int) bool { return a[i].Score() < a[j].Score() }
 
 func checkerr(err error) {
 	if err != nil {
@@ -89,8 +89,8 @@ func scoreOfByte(src byte) int {
 	}
 }
 
-func DecodeSimpleXorCipher(cipherHex []byte, count int) []Candidate {
-	var candidates []Candidate
+func DecodeSimpleXorCipher(cipherHex []byte) Candidates {
+	var candidates Candidates
 
 	cipher := hexDecode(cipherHex)
 	for i := 0; i < 255; i++ {
@@ -103,7 +103,10 @@ func DecodeSimpleXorCipher(cipherHex []byte, count int) []Candidate {
 			candidates = append(candidates, candidate)
 		}
 	}
+	return candidates
+}
 
-	sort.Sort(sort.Reverse(byScore(candidates)))
-	return candidates[:count]
+func (a Candidates) Top(count int) Candidates {
+	sort.Sort(sort.Reverse(a))
+	return a[:count]
 }

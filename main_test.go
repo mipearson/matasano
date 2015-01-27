@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
 )
 import "bytes"
@@ -34,10 +35,10 @@ func TestDecodeSimpleXorCipher(t *testing.T) {
 		cipher:    []byte{'X'},
 	}
 
-	candidates := DecodeSimpleXorCipher(ciphertext, 5)
+	candidates := DecodeSimpleXorCipher(ciphertext).Top(5)
 	found := false
 	for _, candidate := range candidates {
-		fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.score, candidate.plaintext)
+		fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.Score(), candidate.plaintext)
 		if bytes.Equal(candidate.plaintext, expected.plaintext) && bytes.Equal(candidate.cipher, expected.cipher) {
 			found = true
 		}
@@ -45,4 +46,31 @@ func TestDecodeSimpleXorCipher(t *testing.T) {
 	if !found {
 		t.Errorf("TestDecodeSimpleXorCipher could not find matching plaintext from %s", ciphertext)
 	}
+}
+
+func TestFindSimpleXorCipheredString(t *testing.T) {
+	file, err := ioutil.ReadFile("data/set1_challenge4.txt")
+	checkerr(err)
+	ciphertexts := bytes.Split(file, []byte{'\n'})
+
+	candidates := Candidates{}
+	for _, cipher := range ciphertexts {
+		cipher = bytes.TrimSpace(cipher)
+		candidates = append(candidates, DecodeSimpleXorCipher(cipher)...)
+	}
+	expected := Candidate{
+		plaintext: []byte("Now that the party is jumping\n"),
+		cipher:    []byte{'5'},
+	}
+	found := false
+	for _, candidate := range candidates.Top(5) {
+		fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.Score(), candidate.plaintext)
+		if bytes.Equal(candidate.plaintext, expected.plaintext) && bytes.Equal(candidate.cipher, expected.cipher) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("TestFindSimpleXorCipheredString could not find matching plaintext")
+	}
+
 }
