@@ -115,6 +115,19 @@ func RepeatingKeyXOR(src []byte, key []byte) []byte {
 	return dst
 }
 
+func HammingDistance(a []byte, b []byte) int {
+	xor := Xor(a, b)
+	count := 0
+	for _, b := range xor {
+		for i := 0; i < 8; i++ {
+			if b&(1<<uint8(i)) > 0 {
+				count += 1
+			}
+		}
+	}
+	return count
+}
+
 func (a Candidates) Top(count int) Candidates {
 	sort.Sort(sort.Reverse(a))
 	return a[:count]

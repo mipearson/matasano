@@ -82,3 +82,15 @@ func TestRepeatingKeyXor(t *testing.T) {
 		t.Errorf("TestRepeatingKeyXor got %q, expected %q", got, expected)
 	}
 }
+
+func TestHammingDistance(t *testing.T) {
+	a := []byte("this is a test")
+	b := []byte("wokka wokka!!!")
+	expected := 37
+
+	got := HammingDistance(a, b)
+	if got != expected {
+		t.Errorf("TextHammingDistance(%q, %q): got %d, expected %d", a, b, got, expected)
+	}
+
+}
