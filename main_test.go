@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 import "bytes"
 
 func TestHexToBase64(t *testing.T) {
@@ -21,5 +24,25 @@ func TestXorHex(t *testing.T) {
 	got := XorHex(orig, xor)
 	if !bytes.Equal(got, expected) {
 		t.Errorf("XorHex(%s, %s) == %s, want %s", orig, xor, got, expected)
+	}
+}
+
+func TestDecodeSimpleXorCipher(t *testing.T) {
+	ciphertext := []byte("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
+	expected := Candidate{
+		plaintext: []byte("Cooking MC's like a pound of bacon"),
+		cipher:    []byte{'X'},
+	}
+
+	candidates := DecodeSimpleXorCipher(ciphertext, 5)
+	found := false
+	for _, candidate := range candidates {
+		fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.score, candidate.plaintext)
+		if bytes.Equal(candidate.plaintext, expected.plaintext) && bytes.Equal(candidate.cipher, expected.cipher) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("TestDecodeSimpleXorCipher could not find matching plaintext from %s", ciphertext)
 	}
 }
