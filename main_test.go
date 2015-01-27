@@ -28,6 +28,19 @@ func TestXorHex(t *testing.T) {
 	}
 }
 
+func checkForExpectedCandidate(c Candidates, expected Candidate, debug bool) bool {
+	found := false
+	for _, candidate := range c {
+		if debug {
+			fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.Score(), candidate.plaintext)
+		}
+		if bytes.Equal(candidate.plaintext, expected.plaintext) && bytes.Equal(candidate.cipher, expected.cipher) {
+			found = true
+		}
+	}
+	return found
+}
+
 func TestDecodeSimpleXorCipher(t *testing.T) {
 	ciphertext := []byte("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
 	expected := Candidate{
@@ -36,14 +49,7 @@ func TestDecodeSimpleXorCipher(t *testing.T) {
 	}
 
 	candidates := DecodeSimpleXorCipher(ciphertext).Top(5)
-	found := false
-	for _, candidate := range candidates {
-		fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.Score(), candidate.plaintext)
-		if bytes.Equal(candidate.plaintext, expected.plaintext) && bytes.Equal(candidate.cipher, expected.cipher) {
-			found = true
-		}
-	}
-	if !found {
+	if !checkForExpectedCandidate(candidates, expected, false) {
 		t.Errorf("TestDecodeSimpleXorCipher could not find matching plaintext from %s", ciphertext)
 	}
 }
@@ -62,15 +68,7 @@ func TestFindSimpleXorCipheredString(t *testing.T) {
 		plaintext: []byte("Now that the party is jumping\n"),
 		cipher:    []byte{'5'},
 	}
-	found := false
-	for _, candidate := range candidates.Top(5) {
-		fmt.Printf("cipher: %q score: %d plaintext: %q\n", candidate.cipher, candidate.Score(), candidate.plaintext)
-		if bytes.Equal(candidate.plaintext, expected.plaintext) && bytes.Equal(candidate.cipher, expected.cipher) {
-			found = true
-		}
-	}
-	if !found {
+	if !checkForExpectedCandidate(candidates.Top(5), expected, false) {
 		t.Errorf("TestFindSimpleXorCipheredString could not find matching plaintext")
 	}
-
 }
