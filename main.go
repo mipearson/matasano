@@ -14,14 +14,13 @@ const Disqualifiers = "\x00\x01\x02\x03\x04\x05\x06\x07"
 type Candidate struct {
 	plaintext []byte
 	cipher    []byte
-	score     int
 }
 
 type byScore []Candidate
 
 func (a byScore) Len() int           { return len(a) }
 func (a byScore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byScore) Less(i, j int) bool { return a[i].score < a[j].score }
+func (a byScore) Less(i, j int) bool { return a[i].Score() < a[j].Score() }
 
 func checkerr(err error) {
 	if err != nil {
@@ -69,12 +68,12 @@ func Xor(ab []byte, bb []byte) []byte {
 	return c
 }
 
-func freqScore(src []byte) int {
-	if !utf8.Valid(src) || bytes.IndexAny(src, Disqualifiers) != -1 {
+func (c *Candidate) Score() int {
+	if !utf8.Valid(c.plaintext) || bytes.IndexAny(c.plaintext, Disqualifiers) != -1 {
 		return 0
 	}
 	score := 0
-	asUpper := bytes.ToUpper(src)
+	asUpper := bytes.ToUpper(c.plaintext)
 	for _, b := range asUpper {
 		score += scoreOfByte(b)
 	}
@@ -100,8 +99,7 @@ func DecodeSimpleXorCipher(cipherHex []byte, count int) []Candidate {
 			plaintext: Xor(cipher, xor),
 			cipher:    []byte{byte(i)},
 		}
-		candidate.score = freqScore(candidate.plaintext)
-		if candidate.score > 0 {
+		if candidate.Score() > 0 {
 			candidates = append(candidates, candidate)
 		}
 	}
