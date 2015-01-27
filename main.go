@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/hex"
 	"sort"
+	"unicode/utf8"
 )
-import "encoding/hex"
-import "encoding/base64"
 
 const Frequencies = "ZQXJKVBWPYGUMCFLDHSIRNOATE"
+const Disqualifiers = "\x00\x01\x02\x03\x04\x05\x06\x07"
 
 type Candidate struct {
 	plaintext []byte
@@ -68,6 +70,9 @@ func Xor(ab []byte, bb []byte) []byte {
 }
 
 func freqScore(src []byte) int {
+	if !utf8.Valid(src) || bytes.IndexAny(src, Disqualifiers) != -1 {
+		return 0
+	}
 	score := 0
 	asUpper := bytes.ToUpper(src)
 	for _, b := range asUpper {
@@ -77,7 +82,7 @@ func freqScore(src []byte) int {
 }
 
 func scoreOfByte(src byte) int {
-	idx := bytes.Index([]byte(Frequencies), []byte{src})
+	idx := bytes.IndexByte([]byte(Frequencies), src)
 	if idx == -1 {
 		return 0
 	} else {
