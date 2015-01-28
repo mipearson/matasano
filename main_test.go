@@ -92,5 +92,13 @@ func TestHammingDistance(t *testing.T) {
 	if got != expected {
 		t.Errorf("TextHammingDistance(%q, %q): got %d, expected %d", a, b, got, expected)
 	}
+}
 
+func TestGuessKeysize(t *testing.T) {
+	cipher := []byte("aabb0011aabb0011aabb0011aabb0011aabb0011aabb0011aabb0011aabb0011")
+	expected := 8
+	got := GuessKeysize(cipher)
+	if got != expected {
+		t.Errorf("TestGuessKeySize: got %d, expected %d", got, expected)
+	}
 }

@@ -128,6 +128,35 @@ func HammingDistance(a []byte, b []byte) int {
 	return count
 }
 
+const MinKeysize = 2
+const MaxKeysize = 40
+const MaxDistance = 2 << 8
+
+func GuessKeysize(cipher []byte) int {
+	bestDistance := MaxDistance
+	bestSize := 0
+
+	for size := MinKeysize; size <= MaxKeysize; size += 1 {
+		score := ScoreKeysize(cipher, size)
+		if score < bestDistance {
+			bestDistance = score
+			bestSize = size
+		}
+	}
+	return bestSize
+}
+
+func ScoreKeysize(cipher []byte, size int) int {
+	if len(cipher) < (size * 2) {
+		return MaxDistance
+	}
+
+	a := cipher[:size]
+	b := cipher[size : size*2]
+
+	return HammingDistance(a, b)
+}
+
 func (a Candidates) Top(count int) Candidates {
 	sort.Sort(sort.Reverse(a))
 	return a[:count]
