@@ -73,14 +73,36 @@ func TestFindSimpleXorCipheredString(t *testing.T) {
 	}
 }
 
-func TestRepeatingKeyXor(t *testing.T) {
-	plaintext := []byte("Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal")
-	expected := []byte("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
+var repeatingKeyCases = []struct {
+	plaintext []byte
+	key       []byte
+	cipher    []byte
+}{
+	{
+		[]byte("Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"),
+		[]byte("ICE"),
+		[]byte("CzY3JyorLmNiLC5paSojaToqPGMkIC1iPWM0PComImMkJydlJyooKy8gQwplLixlKjEkMzplPisgJ2MMaSsgKDFlKGMmMC4nKC8="),
+	},
+	{
+		[]byte("Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"),
+		[]byte("Z22qbcPASAQ&255"),
+		[]byte("GEdAHwsNN2F0JDwKElxTektdBEICOS90NXFXR1xWMRJTHwZDPig+Iz1DOHwVPV0SEhACKjhzNjlDXBV8elpXEBBDMWEwODxEU1k="),
+	},
+	{
+		[]byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."),
+		[]byte("S3_fFjS$sAT*qC"),
+		[]byte("H1wtAytKOlQANDkKFSw/XC1GNQMnBBIsMV5dYzBcMRUjCSdBBzQmChAnOkM2FSUDPUNTJDhDBW9zQDoCZg48BBYoIVkcLDcTKwMrGjxWUyg6SRgnOlcqCDJKJlBTLTVIHjE2EzoSZg48SBwzMQocIjRdPkYnBjpVBiB6CiQ3c1YxDytKMkBTLD1EGC5zRToILws+CFMwIUMCYz1cLBI0HzcEFjkxWBIqJ1IrDykEc1EfLTVHEixzXz4EKRg6V1MvPVkYYyZHfwcqAyJRGjF0TwljNlJ/BSkHPksXLnRJHi0gVi4TJx59BDc0PVlRIiZHOkYvGCZWFmEwRR0sIRM2CGYYNlQBJDxPHyc2QTYSZgM9BAUuOF8BNzJHOkYwDz9NB2ExWQImc1A2CiofPgQXLjhFAyZzVipGIB80TRI1dEQELz9SfxYnGDpFBzQmBFEGK1A6FjIPJlZTMj1EBWM8UDwHIwkyUFMiIVoYJzJHPhJmBDxKUzEmRRgnNl0rSmYZJkoHYT1EUSAmXy8HZhsmTVMuMkwYIDpSfwIjGTZWBi8gChwsP182EmYLPU0eYT1OUSYgR38KJwg8VgYseg=="),
+	},
+}
 
-	got := hexEncode(RepeatingKeyXOR(plaintext, []byte("ICE")))
-	if !bytes.Equal(got, expected) {
-		t.Errorf("TestRepeatingKeyXor got %q, expected %q", got, expected)
+func TestRepeatingKeyXor(t *testing.T) {
+	for _, test := range repeatingKeyCases {
+		got := base64Encode(RepeatingKeyXOR(test.plaintext, test.key))
+		if !bytes.Equal(got, test.cipher) {
+			t.Errorf("TestRepeatingKeyXor(%q, %q) got %q, expected %q", test.plaintext, test.key, got, test.cipher)
+		}
 	}
+
 }
 
 func TestHammingDistance(t *testing.T) {
@@ -94,11 +116,12 @@ func TestHammingDistance(t *testing.T) {
 	}
 }
 
-func TestGuessKeysize(t *testing.T) {
-	cipher := []byte("aabb0011aabb0011aabb0011aabb0011aabb0011aabb0011aabb0011aabb0011")
-	expected := 8
-	got := GuessKeysize(cipher)
-	if got != expected {
-		t.Errorf("TestGuessKeySize: got %d, expected %d", got, expected)
-	}
-}
+// func TestGuessKeysize(t *testing.T) {
+// 	// We know the below has a keysize of 3, as we used it in a previous example.
+// 	cipher := []byte("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
+// 	expected := 3
+// 	got := GuessKeysize(cipher)
+// 	if got != expected {
+// 		t.Errorf("TestGuessKeySize: got %d, expected %d", got, expected)
+// 	}
+// }

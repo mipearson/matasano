@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"sort"
 	"unicode/utf8"
 )
@@ -43,13 +44,15 @@ func hexEncode(src []byte) []byte {
 	return dst
 }
 
-func HexToBase64(src []byte) []byte {
-
-	raw := hexDecode(src)
+func base64Encode(src []byte) []byte {
 	enc := base64.StdEncoding
-	dst := make([]byte, enc.EncodedLen(len(raw)))
-	enc.Encode(dst, raw)
+	dst := make([]byte, enc.EncodedLen(len(src)))
+	enc.Encode(dst, src)
 	return dst
+}
+
+func HexToBase64(src []byte) []byte {
+	return base64Encode(hexDecode(src))
 }
 
 func XorHex(a []byte, b []byte) []byte {
@@ -130,7 +133,7 @@ func HammingDistance(a []byte, b []byte) int {
 
 const MinKeysize = 2
 const MaxKeysize = 40
-const MaxDistance = 2 << 8
+const MaxDistance = 8.0
 
 func GuessKeysize(cipher []byte) int {
 	bestDistance := MaxDistance
@@ -138,6 +141,7 @@ func GuessKeysize(cipher []byte) int {
 
 	for size := MinKeysize; size <= MaxKeysize; size += 1 {
 		score := ScoreKeysize(cipher, size)
+		fmt.Printf("size: %d score: %f\n", size, score)
 		if score < bestDistance {
 			bestDistance = score
 			bestSize = size
@@ -146,7 +150,7 @@ func GuessKeysize(cipher []byte) int {
 	return bestSize
 }
 
-func ScoreKeysize(cipher []byte, size int) int {
+func ScoreKeysize(cipher []byte, size int) float64 {
 	if len(cipher) < (size * 2) {
 		return MaxDistance
 	}
@@ -154,7 +158,7 @@ func ScoreKeysize(cipher []byte, size int) int {
 	a := cipher[:size]
 	b := cipher[size : size*2]
 
-	return HammingDistance(a, b)
+	return float64(HammingDistance(a, b)) / float64(size)
 }
 
 func (a Candidates) Top(count int) Candidates {
