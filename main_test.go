@@ -116,12 +116,13 @@ func TestHammingDistance(t *testing.T) {
 	}
 }
 
-// func TestGuessKeysize(t *testing.T) {
-// 	// We know the below has a keysize of 3, as we used it in a previous example.
-// 	cipher := []byte("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f")
-// 	expected := 3
-// 	got := GuessKeysize(cipher)
-// 	if got != expected {
-// 		t.Errorf("TestGuessKeySize: got %d, expected %d", got, expected)
-// 	}
-// }
+func TestGuessKeysize(t *testing.T) {
+	for _, test := range repeatingKeyCases {
+		got := GuessKeysize(base64Decode(test.cipher)).Top(1)
+		expected := len(test.key)
+
+		if !got.ContainsSize(expected) {
+			t.Errorf("TestGuessKeySize(%q): got %+v, expected one to have size %d", test.cipher, got, expected)
+		}
+	}
+}

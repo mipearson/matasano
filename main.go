@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 	"sort"
 	"unicode/utf8"
 )
@@ -19,9 +18,12 @@ type Candidate struct {
 
 type Candidates []Candidate
 
-func (a Candidates) Len() int           { return len(a) }
-func (a Candidates) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Candidates) Less(i, j int) bool { return a[i].Score() < a[j].Score() }
+func (a Candidates) Len() int                  { return len(a) }
+func (a Candidates) Swap(i, j int)             { a[i], a[j] = a[j], a[i] }
+func (a Candidates) Less(i, j int) bool        { return a[i].Score() < a[j].Score() }
+func (a KeysizeCandidates) Len() int           { return len(a) }
+func (a KeysizeCandidates) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a KeysizeCandidates) Less(i, j int) bool { return a[i].Score < a[j].Score }
 
 func checkerr(err error) {
 	if err != nil {
@@ -48,6 +50,13 @@ func base64Encode(src []byte) []byte {
 	enc := base64.StdEncoding
 	dst := make([]byte, enc.EncodedLen(len(src)))
 	enc.Encode(dst, src)
+	return dst
+}
+
+func base64Decode(src []byte) []byte {
+	enc := base64.StdEncoding
+	dst := make([]byte, enc.DecodedLen(len(src)))
+	enc.Decode(dst, src)
 	return dst
 }
 
@@ -119,6 +128,9 @@ func RepeatingKeyXOR(src []byte, key []byte) []byte {
 }
 
 func HammingDistance(a []byte, b []byte) int {
+	if len(a) != len(b) {
+		panic("len(a) != len(b)")
+	}
 	xor := Xor(a, b)
 	count := 0
 	for _, b := range xor {
@@ -133,35 +145,58 @@ func HammingDistance(a []byte, b []byte) int {
 
 const MinKeysize = 2
 const MaxKeysize = 40
-const MaxDistance = 8.0
 
-func GuessKeysize(cipher []byte) int {
-	bestDistance := MaxDistance
-	bestSize := 0
+type KeysizeCandidate struct {
+	Score   float64
+	Keysize int
+}
+type KeysizeCandidates []KeysizeCandidate
+
+func GuessKeysize(cipher []byte) KeysizeCandidates {
+	candidates := make(KeysizeCandidates, 0)
 
 	for size := MinKeysize; size <= MaxKeysize; size += 1 {
-		score := ScoreKeysize(cipher, size)
-		fmt.Printf("size: %d score: %f\n", size, score)
-		if score < bestDistance {
-			bestDistance = score
-			bestSize = size
+		score := BlockDistance(cipher, size)
+		if score != -1 {
+			candidates = append(candidates, KeysizeCandidate{Score: score, Keysize: size})
 		}
 	}
-	return bestSize
+	return candidates
 }
 
-func ScoreKeysize(cipher []byte, size int) float64 {
-	if len(cipher) < (size * 2) {
-		return MaxDistance
+func BlockDistance(cipher []byte, size int) float64 {
+	if len(cipher) < (size * 4) {
+		return -1
 	}
 
-	a := cipher[:size]
-	b := cipher[size : size*2]
+	distance := 0
+	iterations := (len(cipher) / size) - 1
 
-	return float64(HammingDistance(a, b)) / float64(size)
+	for i := 0; i < iterations; i += 1 {
+		a := cipher[i*size : (i+1)*size]
+		b := cipher[(i+1)*size : (i+2)*size]
+
+		distance += HammingDistance(a, b)
+	}
+
+	return float64(distance) / float64(size) / float64(iterations)
 }
 
 func (a Candidates) Top(count int) Candidates {
 	sort.Sort(sort.Reverse(a))
 	return a[:count]
+}
+
+func (a KeysizeCandidates) Top(count int) KeysizeCandidates {
+	sort.Sort(a)
+	return a[:count]
+}
+
+func (a KeysizeCandidates) ContainsSize(size int) bool {
+	for _, k := range a {
+		if k.Keysize == size {
+			return true
+		}
+	}
+	return false
 }
