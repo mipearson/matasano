@@ -11,7 +11,7 @@ const Disqualifiers = "\x00\x01\x02\x03\x04\x05\x06\x07"
 
 type Candidate struct {
 	plaintext []byte
-	cipher    []byte
+	key       []byte
 }
 
 type Candidates []Candidate
@@ -66,7 +66,7 @@ func DecodeSimpleXorCipher(cipher []byte) Candidates {
 		xor := bytes.Repeat([]byte{byte(i)}, len(cipher))
 		candidate := Candidate{
 			plaintext: Xor(cipher, xor),
-			cipher:    []byte{byte(i)},
+			key:       []byte{byte(i)},
 		}
 		if candidate.Score() > 0 {
 			candidates = append(candidates, candidate)
@@ -156,4 +156,30 @@ func (a KeysizeCandidates) ContainsSize(size int) bool {
 		}
 	}
 	return false
+}
+
+func everyNthByte(src []byte, offset int, blocksize int) []byte {
+	dst := make([]byte, len(src)/blocksize)
+
+	for i := 0; i < len(dst); i += 1 {
+		dst[i] = src[i*blocksize+offset]
+	}
+	return dst
+}
+
+func GuessRepeatingKey(cipher []byte) Candidates {
+	keysize := GuessKeysize(cipher).Top(1)[0].Keysize
+
+	key := make([]byte, keysize)
+
+	for i := 0; i < keysize; i++ {
+		slices := everyNthByte(cipher, i, keysize)
+		key[i] = DecodeSimpleXorCipher(slices).Top(1)[0].key[0]
+	}
+	candidate := Candidate{
+		key:       key,
+		plaintext: RepeatingKeyXOR(cipher, key),
+	}
+	return Candidates{candidate}
+
 }
