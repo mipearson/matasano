@@ -1,9 +1,7 @@
-package main
+package matasano
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/hex"
 	"sort"
 	"unicode/utf8"
 )
@@ -30,46 +28,6 @@ func checkerr(err error) {
 		// log.Fatalln(err)
 		panic(err)
 	}
-}
-
-func hexDecode(src []byte) []byte {
-	dst := make([]byte, hex.DecodedLen(len(src)))
-	_, err := hex.Decode(dst, src)
-	checkerr(err)
-
-	return dst
-}
-
-func hexEncode(src []byte) []byte {
-	dst := make([]byte, hex.EncodedLen(len(src)))
-	_ = hex.Encode(dst, src)
-	return dst
-}
-
-func base64Encode(src []byte) []byte {
-	enc := base64.StdEncoding
-	dst := make([]byte, enc.EncodedLen(len(src)))
-	enc.Encode(dst, src)
-	return dst
-}
-
-func base64Decode(src []byte) []byte {
-	enc := base64.StdEncoding
-	dst := make([]byte, enc.DecodedLen(len(src)))
-	enc.Decode(dst, src)
-	return dst
-}
-
-func HexToBase64(src []byte) []byte {
-	return base64Encode(hexDecode(src))
-}
-
-func XorHex(a []byte, b []byte) []byte {
-	ab := hexDecode(a)
-	bb := hexDecode(b)
-
-	c := Xor(ab, bb)
-	return hexEncode(c)
 }
 
 func Xor(ab []byte, bb []byte) []byte {
@@ -101,10 +59,9 @@ func scoreOfByte(src byte) int {
 	}
 }
 
-func DecodeSimpleXorCipher(cipherHex []byte) Candidates {
+func DecodeSimpleXorCipher(cipher []byte) Candidates {
 	var candidates Candidates
 
-	cipher := hexDecode(cipherHex)
 	for i := 0; i < 255; i++ {
 		xor := bytes.Repeat([]byte{byte(i)}, len(cipher))
 		candidate := Candidate{
