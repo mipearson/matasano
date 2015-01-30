@@ -2,6 +2,7 @@ package matasano
 
 import (
 	"bytes"
+	"crypto/aes"
 	"sort"
 	"unicode/utf8"
 )
@@ -182,4 +183,15 @@ func GuessRepeatingKey(cipher []byte) Candidates {
 	}
 	return Candidates{candidate}
 
+}
+
+func DecryptAESECB(cipher []byte, key []byte) []byte {
+	aes, err := aes.NewCipher(key)
+	checkerr(err)
+
+	dst := make([]byte, len(cipher))
+	for i := 0; i < len(dst); i += aes.BlockSize() {
+		aes.Decrypt(dst[i:], cipher[i:])
+	}
+	return dst
 }
