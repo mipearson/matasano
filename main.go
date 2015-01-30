@@ -195,3 +195,14 @@ func DecryptAESECB(cipher []byte, key []byte) []byte {
 	}
 	return dst
 }
+
+func DiscoverECB(cipher []byte, keysize int) bool {
+	for a := 0; a < len(cipher); a += keysize {
+		for b := 0; b < len(cipher); b += keysize {
+			if a != b && bytes.Equal(cipher[a:a+keysize], cipher[b:b+keysize]) {
+				return true
+			}
+		}
+	}
+	return false
+}

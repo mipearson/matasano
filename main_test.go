@@ -3,6 +3,7 @@ package matasano
 import (
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"testing"
 )
 import "bytes"
@@ -153,5 +154,26 @@ func TestDecryptAESECB(t *testing.T) {
 	got := DecryptAESECB(cipher, key)
 	if !bytes.Equal(got, expected) {
 		t.Errorf("TextDecryptAES did not decrypt correctly, expected %q got %q", expected, got)
+	}
+}
+
+func TestDiscoverECB(t *testing.T) {
+	text, err := ioutil.ReadFile("data/set1_challenge8.txt")
+	checkerr(err)
+	lines := bytes.Split(text, []byte("\n"))
+	found := make([][]byte, 0)
+	expected := [][]byte{
+		Base64("2IBhl0CooZt4QKijHIEKPQhkmvcNwG9P1dLWnHRM0oPi3QUva2Qdv50RsDSFQrtXCGSa9w3Ab0/V0tacdEzSg5R1yd/bwdRll5SdnH6Cv1oIZJr3DcBvT9XS1px0TNKDl6k+q41q7NVmSJFUeJprAwhkmvcNwG9P1dLWnHRM0oPUAxgMmMj22x8qP5xAQN6wq1GymTPywSPFg4awb7oYag==").Decode(),
+	}
+
+	for _, line := range lines {
+		cipher := Hex(line).Decode()
+		if DiscoverECB(line, 16) {
+			found = append(found, cipher)
+		}
+	}
+
+	if !reflect.DeepEqual(found, expected) {
+		t.Errorf("TestDiscoverECB got %v, expected %v", found, expected)
 	}
 }
