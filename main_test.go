@@ -177,3 +177,13 @@ func TestDiscoverECB(t *testing.T) {
 		t.Errorf("TestDiscoverECB got %v, expected %v", found, expected)
 	}
 }
+
+func TestPkcs7Padding(t *testing.T) {
+	src := []byte("YELLOW SUBMARINE")
+	expected := []byte("YELLOW SUBMARINE\x04\x04\x04\x04")
+	got := Pkcs7Padding(src, 20)
+
+	if !bytes.Equal(got, expected) {
+		t.Errorf("TextPkcs7Padding(%q): got %q expected %q", src, got, expected)
+	}
+}

@@ -206,3 +206,13 @@ func DiscoverECB(cipher []byte, keysize int) bool {
 	}
 	return false
 }
+
+func Pkcs7Padding(src []byte, blocksize int) []byte {
+	more := blocksize - (len(src) % blocksize)
+	dst := make([]byte, len(src)+more)
+	copy(dst, src)
+	for i := len(src); i < len(dst); i++ {
+		dst[i] = 4
+	}
+	return dst
+}
