@@ -128,6 +128,13 @@ func TestGuessKeysize(t *testing.T) {
 	}
 }
 
+func TestDiscoverKeysize(t *testing.T) {
+	got := Encrypter(RandomCBC).DiscoverKeysize()
+	if got != 16 {
+		t.Errorf("TestDiscoverKeysize: got %d, expected 16", got)
+	}
+}
+
 func TestGuessRepeatingKey(t *testing.T) {
 	text, err := ioutil.ReadFile("data/set1_challenge6.txt")
 	checkerr(err)
@@ -181,7 +188,7 @@ func TestDecryptAESCBC(t *testing.T) {
 	}
 }
 
-func TestDiscoverECB(t *testing.T) {
+func TestCipherIsECB(t *testing.T) {
 	text, err := ioutil.ReadFile("data/set1_challenge8.txt")
 	checkerr(err)
 	lines := bytes.Split(text, []byte("\n"))
@@ -192,13 +199,22 @@ func TestDiscoverECB(t *testing.T) {
 
 	for _, line := range lines {
 		cipher := Hex(line).Decode()
-		if DiscoverECB(line, 16) {
+		if CipherIsECB(line, 16) {
 			found = append(found, cipher)
 		}
 	}
 
 	if !reflect.DeepEqual(found, expected) {
-		t.Errorf("TestDiscoverECB got %v, expected %v", found, expected)
+		t.Errorf("TestCipherIsECB got %v, expected %v", found, expected)
+	}
+}
+
+func TestIsECB(t *testing.T) {
+	if !Encrypter(RandomECB).IsECB(16) {
+		t.Errorf("IsECB on RandomECB got false, expected true")
+	}
+	if Encrypter(RandomCBC).IsECB(16) {
+		t.Errorf("IsECB on RandomECB got true, expected false")
 	}
 }
 
@@ -222,16 +238,5 @@ func TestRandBytes(t *testing.T) {
 
 	if len(a) != 16 {
 		t.Errorf("TestRandBytes(16) gave len of %d, expected 16", len(a))
-	}
-}
-
-func TestECBCBCOracle(t *testing.T) {
-	plaintext := []byte("                                                          ")
-	for i := 0; i < 16; i++ {
-		cipher, expected := RandECBCBCCrypt(plaintext)
-		got := DiscoverECB(cipher, 16)
-		if got != expected {
-			t.Errorf("TestEBCOracle i: %d, got %v expected %v", i, got, expected)
-		}
 	}
 }

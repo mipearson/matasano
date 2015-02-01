@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/aes"
 	crand "crypto/rand"
-	"math/rand"
 	"sort"
 	"unicode/utf8"
 )
@@ -25,6 +24,8 @@ func (a Candidates) Less(i, j int) bool        { return a[i].Score() < a[j].Scor
 func (a KeysizeCandidates) Len() int           { return len(a) }
 func (a KeysizeCandidates) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a KeysizeCandidates) Less(i, j int) bool { return a[i].Score < a[j].Score }
+
+type Encrypter func([]byte) []byte
 
 func checkerr(err error) {
 	if err != nil {
@@ -245,7 +246,7 @@ func EncryptAESCBC(plaintext []byte, key []byte, iv []byte) []byte {
 	return dst
 }
 
-func DiscoverECB(cipher []byte, keysize int) bool {
+func CipherIsECB(cipher []byte, keysize int) bool {
 	for a := 0; a < len(cipher); a += keysize {
 		for b := 0; b < len(cipher); b += keysize {
 			if a != b && bytes.Equal(cipher[a:a+keysize], cipher[b:b+keysize]) {
@@ -254,6 +255,30 @@ func DiscoverECB(cipher []byte, keysize int) bool {
 		}
 	}
 	return false
+}
+
+func RandomECB(plaintext []byte) []byte {
+	return EncryptAESECB(Pkcs7Padding(plaintext, 16), RandBytes(16))
+}
+
+func RandomCBC(plaintext []byte) []byte {
+	return EncryptAESCBC(Pkcs7Padding(plaintext, 16), RandBytes(16), RandBytes(16))
+}
+
+func (e Encrypter) DiscoverKeysize() int {
+	plaintext := []byte("A")
+	base := len(e(plaintext))
+	newlen := base
+	for ; newlen == base; plaintext = append(plaintext, 'A') {
+		newlen = len(e(plaintext))
+	}
+
+	return newlen - base
+}
+
+func (e Encrypter) IsECB(keysize int) bool {
+	plaintext := bytes.Repeat([]byte(" "), keysize*4)
+	return CipherIsECB(e(plaintext), 16)
 }
 
 func Pkcs7Padding(src []byte, blocksize int) []byte {
@@ -273,19 +298,20 @@ func RandBytes(n int) []byte {
 	return b
 }
 
-func RandECBCBCCrypt(plaintext []byte) (cipher []byte, isECB bool) {
-	key := RandBytes(16)
+var CachedPersistentKey []byte
 
-	prefix := RandBytes(rand.Intn(5) + 5)
-	suffix := RandBytes(rand.Intn(5) + 5)
-
-	plaintext = bytes.Join([][]byte{prefix, plaintext, suffix}, []byte{})
-
-	plaintext = Pkcs7Padding(plaintext, 16)
-
-	if rand.Intn(2) == 0 {
-		return EncryptAESECB(plaintext, key), true
-	} else {
-		return EncryptAESCBC(plaintext, key, RandBytes(16)), false
+func PersistentKey() []byte {
+	if len(CachedPersistentKey) == 0 {
+		CachedPersistentKey = RandBytes(16)
 	}
+
+	return CachedPersistentKey
+}
+
+func Set2Challenge12Crypt(plaintext []byte) (cipher []byte) {
+	suffix := Base64("Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK").Decode()
+
+	plaintext = bytes.Join([][]byte{plaintext, suffix}, []byte{})
+
+	return EncryptAESECB(Pkcs7Padding(plaintext, len(PersistentKey())), PersistentKey())
 }
