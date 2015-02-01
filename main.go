@@ -3,6 +3,8 @@ package matasano
 import (
 	"bytes"
 	"crypto/aes"
+	crand "crypto/rand"
+	"math/rand"
 	"sort"
 	"unicode/utf8"
 )
@@ -262,4 +264,28 @@ func Pkcs7Padding(src []byte, blocksize int) []byte {
 		dst[i] = 4
 	}
 	return dst
+}
+
+func RandBytes(n int) []byte {
+	b := make([]byte, n)
+	_, err := crand.Read(b)
+	checkerr(err)
+	return b
+}
+
+func RandECBCBCCrypt(plaintext []byte) (cipher []byte, isECB bool) {
+	key := RandBytes(16)
+
+	prefix := RandBytes(rand.Intn(5) + 5)
+	suffix := RandBytes(rand.Intn(5) + 5)
+
+	plaintext = bytes.Join([][]byte{prefix, plaintext, suffix}, []byte{})
+
+	plaintext = Pkcs7Padding(plaintext, 16)
+
+	if rand.Intn(2) == 0 {
+		return EncryptAESECB(plaintext, key), true
+	} else {
+		return EncryptAESCBC(plaintext, key, RandBytes(16)), false
+	}
 }

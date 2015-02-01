@@ -211,3 +211,27 @@ func TestPkcs7Padding(t *testing.T) {
 		t.Errorf("TextPkcs7Padding(%q): got %q expected %q", src, got, expected)
 	}
 }
+
+func TestRandBytes(t *testing.T) {
+	a := RandBytes(16)
+	b := RandBytes(16)
+
+	if bytes.Equal(a, b) {
+		t.Errorf("TestRandBytes(16) gave equal results on successive calls: %v", a)
+	}
+
+	if len(a) != 16 {
+		t.Errorf("TestRandBytes(16) gave len of %d, expected 16", len(a))
+	}
+}
+
+func TestECBCBCOracle(t *testing.T) {
+	plaintext := []byte("                                                          ")
+	for i := 0; i < 16; i++ {
+		cipher, expected := RandECBCBCCrypt(plaintext)
+		got := DiscoverECB(cipher, 16)
+		if got != expected {
+			t.Errorf("TestEBCOracle i: %d, got %v expected %v", i, got, expected)
+		}
+	}
+}
