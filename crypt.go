@@ -1,10 +1,13 @@
 package matasano
 
-import "crypto/aes"
+import (
+	"bytes"
+	"crypto/aes"
+)
 
 func DecryptAESECB(cipher []byte, key []byte) []byte {
 	aes, err := aes.NewCipher(key)
-	checkerr(err)
+	CheckErr(err)
 
 	dst := make([]byte, len(cipher))
 	for i := 0; i < len(dst); i += aes.BlockSize() {
@@ -25,7 +28,7 @@ func Pkcs7Padding(src []byte, blocksize int) []byte {
 
 func EncryptAESECB(plaintext []byte, key []byte) []byte {
 	aes, err := aes.NewCipher(key)
-	checkerr(err)
+	CheckErr(err)
 
 	dst := make([]byte, len(plaintext))
 	for i := 0; i < len(dst); i += aes.BlockSize() {
@@ -36,7 +39,7 @@ func EncryptAESECB(plaintext []byte, key []byte) []byte {
 
 func DecryptAESCBC(cipher []byte, key []byte, iv []byte) []byte {
 	aes, err := aes.NewCipher(key)
-	checkerr(err)
+	CheckErr(err)
 
 	if len(iv) != aes.BlockSize() {
 		panic("aes.BlockSize != len(iv)")
@@ -54,7 +57,7 @@ func DecryptAESCBC(cipher []byte, key []byte, iv []byte) []byte {
 
 func EncryptAESCBC(plaintext []byte, key []byte, iv []byte) []byte {
 	aes, err := aes.NewCipher(key)
-	checkerr(err)
+	CheckErr(err)
 
 	if len(iv) != aes.BlockSize() {
 		panic("aes.BlockSize != len(iv)")
@@ -68,4 +71,15 @@ func EncryptAESCBC(plaintext []byte, key []byte, iv []byte) []byte {
 		iv = dst[i:til]
 	}
 	return dst
+}
+
+func CipherIsECB(cipher []byte, keysize int) bool {
+	for a := 0; a < len(cipher); a += keysize {
+		for b := 0; b < len(cipher); b += keysize {
+			if a != b && bytes.Equal(cipher[a:a+keysize], cipher[b:b+keysize]) {
+				return true
+			}
+		}
+	}
+	return false
 }

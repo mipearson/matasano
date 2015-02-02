@@ -1,9 +1,11 @@
-package matasano
+package set1
 
 import (
 	"bytes"
 	"sort"
 	"unicode/utf8"
+
+	"github.com/mipearson/matasano"
 )
 
 const Frequencies = "ZQXJKVBWPYGUMCFLDHSIRNOATE"
@@ -50,7 +52,7 @@ func DecodeSimpleXorCipher(cipher []byte) Candidates {
 	for i := 0; i < 255; i++ {
 		xor := bytes.Repeat([]byte{byte(i)}, len(cipher))
 		candidate := Candidate{
-			plaintext: Xor(cipher, xor),
+			plaintext: matasano.Xor(cipher, xor),
 			key:       []byte{byte(i)},
 		}
 		if candidate.Score() > 0 {
@@ -73,7 +75,7 @@ func HammingDistance(a []byte, b []byte) int {
 	if len(a) != len(b) {
 		panic("len(a) != len(b)")
 	}
-	xor := Xor(a, b)
+	xor := matasano.Xor(a, b)
 	count := 0
 	for _, b := range xor {
 		for i := 0; i < 8; i++ {
@@ -166,16 +168,4 @@ func GuessRepeatingKey(cipher []byte) Candidates {
 		plaintext: RepeatingKeyXOR(cipher, key),
 	}
 	return Candidates{candidate}
-
-}
-
-func CipherIsECB(cipher []byte, keysize int) bool {
-	for a := 0; a < len(cipher); a += keysize {
-		for b := 0; b < len(cipher); b += keysize {
-			if a != b && bytes.Equal(cipher[a:a+keysize], cipher[b:b+keysize]) {
-				return true
-			}
-		}
-	}
-	return false
 }

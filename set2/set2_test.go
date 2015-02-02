@@ -1,4 +1,4 @@
-package matasano
+package set2
 
 import (
 	"bytes"

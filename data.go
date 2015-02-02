@@ -12,7 +12,7 @@ type Hex []byte
 
 var WhitespaceRegexp = regexp.MustCompile("\\s+")
 
-func checkerr(err error) {
+func CheckErr(err error) {
 	if err != nil {
 		// log.Fatalln(err)
 		panic(err)
@@ -30,14 +30,14 @@ func Xor(ab []byte, bb []byte) []byte {
 func RandBytes(n int) []byte {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
-	checkerr(err)
+	CheckErr(err)
 	return b
 }
 
 func (h Hex) Decode() []byte {
 	dst := make([]byte, hex.DecodedLen(len(h)))
 	len, err := hex.Decode(dst, h)
-	checkerr(err)
+	CheckErr(err)
 
 	return dst[:len]
 }
@@ -57,6 +57,6 @@ func ToBase64(src []byte) Base64 {
 func (b Base64) Decode() []byte {
 	dst := make([]byte, base64.StdEncoding.DecodedLen(len(b)))
 	len, err := base64.StdEncoding.Decode(dst, b)
-	checkerr(err)
+	CheckErr(err)
 	return dst[:len]
 }

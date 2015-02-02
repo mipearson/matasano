@@ -3,6 +3,7 @@ package matasano
 import (
 	"bytes"
 	"io/ioutil"
+	"reflect"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestPkcs7Padding(t *testing.T) {
 
 func TestDecryptAESCBC(t *testing.T) {
 	text, err := ioutil.ReadFile("data/set2_challenge10.txt")
-	checkerr(err)
+	CheckErr(err)
 	cipher := Base64(text).Decode()
 	key := []byte("YELLOW SUBMARINE")
 	iv := make([]byte, 16)
@@ -32,5 +33,26 @@ func TestDecryptAESCBC(t *testing.T) {
 	got = EncryptAESCBC(got, key, iv)
 	if !bytes.Equal(got, cipher) {
 		t.Errorf("EncryptAESCCB did not encrypt correctly, expected %q got %q", cipher, got)
+	}
+}
+
+func TestCipherIsECB(t *testing.T) {
+	text, err := ioutil.ReadFile("data/set1_challenge8.txt")
+	CheckErr(err)
+	lines := bytes.Split(text, []byte("\n"))
+	found := make([][]byte, 0)
+	expected := [][]byte{
+		Base64("2IBhl0CooZt4QKijHIEKPQhkmvcNwG9P1dLWnHRM0oPi3QUva2Qdv50RsDSFQrtXCGSa9w3Ab0/V0tacdEzSg5R1yd/bwdRll5SdnH6Cv1oIZJr3DcBvT9XS1px0TNKDl6k+q41q7NVmSJFUeJprAwhkmvcNwG9P1dLWnHRM0oPUAxgMmMj22x8qP5xAQN6wq1GymTPywSPFg4awb7oYag==").Decode(),
+	}
+
+	for _, line := range lines {
+		cipher := Hex(line).Decode()
+		if CipherIsECB(line, 16) {
+			found = append(found, cipher)
+		}
+	}
+
+	if !reflect.DeepEqual(found, expected) {
+		t.Errorf("TestCipherIsECB got %v, expected %v", found, expected)
 	}
 }
