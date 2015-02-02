@@ -35,10 +35,40 @@ func TestPersistentKey(t *testing.T) {
 }
 
 func TestSet2Challenge12Decrypt(t *testing.T) {
-	expected := []byte("")
+	expected := []byte("Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n\x04\x04\x04\x04\x04\x04")
 	got := Set2Challenge12Decrypt()
 
 	if !bytes.Equal(got, expected) {
 		t.Errorf("TestSet2Challenge12Decrypt: got %q expected %q", got, expected)
+	}
+}
+
+func TestDiscoveryPrefix(t *testing.T) {
+	cases := []struct {
+		known    []byte
+		expected [][]byte
+	}{
+		{
+			[]byte(""),
+			[][]byte{[]byte("AAAAAAA"), []byte("AAAAAAA")},
+		},
+		{
+			[]byte("HI"),
+			[][]byte{[]byte("AAAAA"), []byte("AAAAAHI")},
+		},
+		{
+			[]byte("ABCDEFJIHKL"),
+			[][]byte{[]byte("AAAA"), []byte("EFJIHKL")},
+		},
+	}
+
+	for _, c := range cases {
+		gotPrefix, gotCandidate := discoveryPrefix(8, c.known)
+		if !bytes.Equal(gotPrefix, c.expected[0]) {
+			t.Errorf("TestDiscoveryPrefix(8, %q), got prefix %q expected %q", c.known, gotPrefix, c.expected[0])
+		}
+		if !bytes.Equal(gotCandidate, c.expected[1]) {
+			t.Errorf("TestDiscoveryPrefix(8, %q), got candidate %q expected %q", c.known, gotCandidate, c.expected[1])
+		}
 	}
 }

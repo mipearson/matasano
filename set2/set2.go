@@ -2,6 +2,7 @@ package set2
 
 import (
 	"bytes"
+	"log"
 
 	"github.com/mipearson/matasano"
 )
@@ -51,5 +52,51 @@ func Set2Challenge12Crypt(plaintext []byte) []byte {
 }
 
 func Set2Challenge12Decrypt() []byte {
-	return []byte("n/a")
+	e := Encrypter(Set2Challenge12Crypt)
+	keysize := e.DiscoverKeysize()
+	if !e.IsECB(keysize) {
+		log.Fatal("Expected Set2Challenge12Crypt to encrypt as ECB, but it didn't!")
+	}
+
+	cipherLen := len(e([]byte("")))
+	known := []byte{}
+	for len(known) < cipherLen {
+		known = append(known, e.DiscoverNextByte(keysize, known))
+	}
+
+	return known
+}
+
+func discoveryPrefix(keysize int, known []byte) (prefix []byte, candidate []byte) {
+	rem := len(known) % keysize
+	blockAt := len(known) - rem
+	prefix = bytes.Repeat([]byte("A"), keysize-rem-1)
+	if blockAt > 0 {
+		candidate = known[blockAt-(keysize-rem-1):]
+	} else {
+		knownpart := known[blockAt:]
+		candidate = bytes.Join([][]byte{prefix, knownpart}, []byte(""))
+	}
+	return
+
+}
+
+func (e Encrypter) DiscoverNextByte(keysize int, known []byte) byte {
+
+	prefix, candidate := discoveryPrefix(keysize, known)
+
+	blockAt := len(known) - (len(known) % keysize)
+	base := e(prefix)[blockAt : blockAt+keysize]
+
+	var i int
+	candidate = append(candidate, ' ')
+	for cipher := []byte{}; i < 256 && !bytes.Equal(cipher, base); i++ {
+		candidate[len(candidate)-1] = byte(i)
+		cipher = e(candidate)[:keysize]
+	}
+	if i == 256 {
+		return ' '
+	} else {
+		return byte(i - 1)
+	}
 }
