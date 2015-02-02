@@ -33,3 +33,12 @@ func TestPersistentKey(t *testing.T) {
 		t.Errorf("TestPersistentKey: expected subsequent calls to give equal results")
 	}
 }
+
+func TestSet2Challenge12Decrypt(t *testing.T) {
+	expected := []byte("")
+	got := Set2Challenge12Decrypt()
+
+	if !bytes.Equal(got, expected) {
+		t.Errorf("TestSet2Challenge12Decrypt: got %q expected %q", got, expected)
+	}
+}

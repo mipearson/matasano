@@ -42,10 +42,14 @@ func PersistentKey() []byte {
 	return CachedPersistentKey
 }
 
-func Set2Challenge12Crypt(plaintext []byte) (cipher []byte) {
+func Set2Challenge12Crypt(plaintext []byte) []byte {
 	suffix := matasano.Base64("Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK").Decode()
 
 	plaintext = bytes.Join([][]byte{plaintext, suffix}, []byte{})
 
 	return matasano.EncryptAESECB(matasano.Pkcs7Padding(plaintext, len(PersistentKey())), PersistentKey())
+}
+
+func Set2Challenge12Decrypt() []byte {
+	return []byte("n/a")
 }
