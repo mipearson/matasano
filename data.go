@@ -1,6 +1,7 @@
 package matasano
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"regexp"
@@ -10,6 +11,28 @@ type Base64 []byte
 type Hex []byte
 
 var WhitespaceRegexp = regexp.MustCompile("\\s+")
+
+func checkerr(err error) {
+	if err != nil {
+		// log.Fatalln(err)
+		panic(err)
+	}
+}
+
+func Xor(ab []byte, bb []byte) []byte {
+	c := make([]byte, len(ab))
+	for i := 0; i < len(c); i++ {
+		c[i] = ab[i] ^ bb[i]
+	}
+	return c
+}
+
+func RandBytes(n int) []byte {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	checkerr(err)
+	return b
+}
 
 func (h Hex) Decode() []byte {
 	dst := make([]byte, hex.DecodedLen(len(h)))

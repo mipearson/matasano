@@ -2,8 +2,6 @@ package matasano
 
 import (
 	"bytes"
-	"crypto/aes"
-	crand "crypto/rand"
 	"sort"
 	"unicode/utf8"
 )
@@ -24,23 +22,6 @@ func (a Candidates) Less(i, j int) bool        { return a[i].Score() < a[j].Scor
 func (a KeysizeCandidates) Len() int           { return len(a) }
 func (a KeysizeCandidates) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a KeysizeCandidates) Less(i, j int) bool { return a[i].Score < a[j].Score }
-
-type Encrypter func([]byte) []byte
-
-func checkerr(err error) {
-	if err != nil {
-		// log.Fatalln(err)
-		panic(err)
-	}
-}
-
-func Xor(ab []byte, bb []byte) []byte {
-	c := make([]byte, len(ab))
-	for i := 0; i < len(c); i++ {
-		c[i] = ab[i] ^ bb[i]
-	}
-	return c
-}
 
 func (c *Candidate) Score() int {
 	if !utf8.Valid(c.plaintext) || bytes.IndexAny(c.plaintext, Disqualifiers) != -1 {
@@ -188,64 +169,6 @@ func GuessRepeatingKey(cipher []byte) Candidates {
 
 }
 
-func DecryptAESECB(cipher []byte, key []byte) []byte {
-	aes, err := aes.NewCipher(key)
-	checkerr(err)
-
-	dst := make([]byte, len(cipher))
-	for i := 0; i < len(dst); i += aes.BlockSize() {
-		aes.Decrypt(dst[i:], cipher[i:])
-	}
-	return dst
-}
-
-func EncryptAESECB(plaintext []byte, key []byte) []byte {
-	aes, err := aes.NewCipher(key)
-	checkerr(err)
-
-	dst := make([]byte, len(plaintext))
-	for i := 0; i < len(dst); i += aes.BlockSize() {
-		aes.Encrypt(dst[i:], plaintext[i:])
-	}
-	return dst
-}
-
-func DecryptAESCBC(cipher []byte, key []byte, iv []byte) []byte {
-	aes, err := aes.NewCipher(key)
-	checkerr(err)
-
-	if len(iv) != aes.BlockSize() {
-		panic("aes.BlockSize != len(iv)")
-	}
-
-	dst := make([]byte, len(cipher))
-	for i := 0; i < len(dst); i += aes.BlockSize() {
-		til := i + aes.BlockSize()
-		aes.Decrypt(dst[i:], cipher[i:])
-		copy(dst[i:til], Xor(dst[i:til], iv))
-		iv = cipher[i:]
-	}
-	return dst
-}
-
-func EncryptAESCBC(plaintext []byte, key []byte, iv []byte) []byte {
-	aes, err := aes.NewCipher(key)
-	checkerr(err)
-
-	if len(iv) != aes.BlockSize() {
-		panic("aes.BlockSize != len(iv)")
-	}
-
-	dst := make([]byte, len(plaintext))
-	for i := 0; i < len(dst); i += aes.BlockSize() {
-		til := i + aes.BlockSize()
-		part := Xor(iv, plaintext[i:til])
-		aes.Encrypt(dst[i:], part)
-		iv = dst[i:til]
-	}
-	return dst
-}
-
 func CipherIsECB(cipher []byte, keysize int) bool {
 	for a := 0; a < len(cipher); a += keysize {
 		for b := 0; b < len(cipher); b += keysize {
@@ -255,63 +178,4 @@ func CipherIsECB(cipher []byte, keysize int) bool {
 		}
 	}
 	return false
-}
-
-func RandomECB(plaintext []byte) []byte {
-	return EncryptAESECB(Pkcs7Padding(plaintext, 16), RandBytes(16))
-}
-
-func RandomCBC(plaintext []byte) []byte {
-	return EncryptAESCBC(Pkcs7Padding(plaintext, 16), RandBytes(16), RandBytes(16))
-}
-
-func (e Encrypter) DiscoverKeysize() int {
-	plaintext := []byte("A")
-	base := len(e(plaintext))
-	newlen := base
-	for ; newlen == base; plaintext = append(plaintext, 'A') {
-		newlen = len(e(plaintext))
-	}
-
-	return newlen - base
-}
-
-func (e Encrypter) IsECB(keysize int) bool {
-	plaintext := bytes.Repeat([]byte(" "), keysize*4)
-	return CipherIsECB(e(plaintext), 16)
-}
-
-func Pkcs7Padding(src []byte, blocksize int) []byte {
-	more := blocksize - (len(src) % blocksize)
-	dst := make([]byte, len(src)+more)
-	copy(dst, src)
-	for i := len(src); i < len(dst); i++ {
-		dst[i] = 4
-	}
-	return dst
-}
-
-func RandBytes(n int) []byte {
-	b := make([]byte, n)
-	_, err := crand.Read(b)
-	checkerr(err)
-	return b
-}
-
-var CachedPersistentKey []byte
-
-func PersistentKey() []byte {
-	if len(CachedPersistentKey) == 0 {
-		CachedPersistentKey = RandBytes(16)
-	}
-
-	return CachedPersistentKey
-}
-
-func Set2Challenge12Crypt(plaintext []byte) (cipher []byte) {
-	suffix := Base64("Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK").Decode()
-
-	plaintext = bytes.Join([][]byte{plaintext, suffix}, []byte{})
-
-	return EncryptAESECB(Pkcs7Padding(plaintext, len(PersistentKey())), PersistentKey())
 }

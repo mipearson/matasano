@@ -1,33 +1,12 @@
 package matasano
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
 )
-import "bytes"
-
-func TestHexToBase64(t *testing.T) {
-	hex := Hex("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")
-	base64 := Base64("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t")
-
-	got := ToBase64(hex.Decode())
-	if !bytes.Equal(got, base64) {
-		t.Errorf("ToBase64(hex.Decode()) for %s == %s, want %s", hex, got, base64)
-	}
-}
-
-func TestXor(t *testing.T) {
-	orig := Hex("1c0111001f010100061a024b53535009181c")
-	xor := Hex("686974207468652062756c6c277320657965")
-	expected := Hex("746865206b696420646f6e277420706c6179")
-
-	got := Xor(orig.Decode(), xor.Decode())
-	if !bytes.Equal(got, expected.Decode()) {
-		t.Errorf("Xor(%s, %s) == %s, want %s", orig, xor, got, expected)
-	}
-}
 
 func checkForExpectedCandidate(c Candidates, expected Candidate, debug bool) bool {
 	found := false
@@ -128,13 +107,6 @@ func TestGuessKeysize(t *testing.T) {
 	}
 }
 
-func TestDiscoverKeysize(t *testing.T) {
-	got := Encrypter(RandomCBC).DiscoverKeysize()
-	if got != 16 {
-		t.Errorf("TestDiscoverKeysize: got %d, expected 16", got)
-	}
-}
-
 func TestGuessRepeatingKey(t *testing.T) {
 	text, err := ioutil.ReadFile("data/set1_challenge6.txt")
 	checkerr(err)
@@ -169,25 +141,6 @@ func TestDecryptAndEncryptAESECB(t *testing.T) {
 	}
 }
 
-func TestDecryptAESCBC(t *testing.T) {
-	text, err := ioutil.ReadFile("data/set2_challenge10.txt")
-	checkerr(err)
-	cipher := Base64(text).Decode()
-	key := []byte("YELLOW SUBMARINE")
-	iv := make([]byte, 16)
-	expected := []byte("I'm back and I'm ringin' the bell \nA rockin' on the mike while the fly girls yell \nIn ecstasy in the back of me \nWell that's my DJ Deshay cuttin' all them Z's \nHittin' hard and the girlies goin' crazy \nVanilla's on the mike, man I'm not lazy. \n\nI'm lettin' my drug kick in \nIt controls my mouth and I begin \nTo just let it flow, let my concepts go \nMy posse's to the side yellin', Go Vanilla Go! \n\nSmooth 'cause that's the way I will be \nAnd if you don't give a damn, then \nWhy you starin' at me \nSo get off 'cause I control the stage \nThere's no dissin' allowed \nI'm in my own phase \nThe girlies sa y they love me and that is ok \nAnd I can dance better than any kid n' play \n\nStage 2 -- Yea the one ya' wanna listen to \nIt's off my head so let the beat play through \nSo I can funk it up and make it sound good \n1-2-3 Yo -- Knock on some wood \nFor good luck, I like my rhymes atrocious \nSupercalafragilisticexpialidocious \nI'm an effect and that you can bet \nI can take a fly girl and make her wet. \n\nI'm like Samson -- Samson to Delilah \nThere's no denyin', You can try to hang \nBut you'll keep tryin' to get my style \nOver and over, practice makes perfect \nBut not if you're a loafer. \n\nYou'll get nowhere, no place, no time, no girls \nSoon -- Oh my God, homebody, you probably eat \nSpaghetti with a spoon! Come on and say it! \n\nVIP. Vanilla Ice yep, yep, I'm comin' hard like a rhino \nIntoxicating so you stagger like a wino \nSo punks stop trying and girl stop cryin' \nVanilla Ice is sellin' and you people are buyin' \n'Cause why the freaks are jockin' like Crazy Glue \nMovin' and groovin' trying to sing along \nAll through the ghetto groovin' this here song \nNow you're amazed by the VIP posse. \n\nSteppin' so hard like a German Nazi \nStartled by the bases hittin' ground \nThere's no trippin' on mine, I'm just gettin' down \nSparkamatic, I'm hangin' tight like a fanatic \nYou trapped me once and I thought that \nYou might have it \nSo step down and lend me your ear \n'89 in my time! You, '90 is my year. \n\nYou're weakenin' fast, YO! and I can tell it \nYour body's gettin' hot, so, so I can smell it \nSo don't be mad and don't be sad \n'Cause the lyrics belong to ICE, You can call me Dad \nYou're pitchin' a fit, so step back and endure \nLet the witch doctor, Ice, do the dance to cure \nSo come up close and don't be square \nYou wanna battle me -- Anytime, anywhere \n\nYou thought that I was weak, Boy, you're dead wrong \nSo come on, everybody and sing this song \n\nSay -- Play that funky music Say, go white boy, go white boy go \nplay that funky music Go white boy, go white boy, go \nLay down and boogie and play that funky music till you die. \n\nPlay that funky music Come on, Come on, let me hear \nPlay that funky music white boy you say it, say it \nPlay that funky music A little louder now \nPlay that funky music, white boy Come on, Come on, Come on \nPlay that funky music \n\x04\x04\x04\x04")
-
-	got := DecryptAESCBC(cipher, key, iv)
-	if !bytes.Equal(got, expected) {
-		t.Errorf("DecryptAESCCB did not decrypt correctly, expected %q got %q", expected, got)
-	}
-
-	got = EncryptAESCBC(got, key, iv)
-	if !bytes.Equal(got, cipher) {
-		t.Errorf("EncryptAESCCB did not encrypt correctly, expected %q got %q", cipher, got)
-	}
-}
-
 func TestCipherIsECB(t *testing.T) {
 	text, err := ioutil.ReadFile("data/set1_challenge8.txt")
 	checkerr(err)
@@ -206,37 +159,5 @@ func TestCipherIsECB(t *testing.T) {
 
 	if !reflect.DeepEqual(found, expected) {
 		t.Errorf("TestCipherIsECB got %v, expected %v", found, expected)
-	}
-}
-
-func TestIsECB(t *testing.T) {
-	if !Encrypter(RandomECB).IsECB(16) {
-		t.Errorf("IsECB on RandomECB got false, expected true")
-	}
-	if Encrypter(RandomCBC).IsECB(16) {
-		t.Errorf("IsECB on RandomECB got true, expected false")
-	}
-}
-
-func TestPkcs7Padding(t *testing.T) {
-	src := []byte("YELLOW SUBMARINE")
-	expected := []byte("YELLOW SUBMARINE\x04\x04\x04\x04")
-	got := Pkcs7Padding(src, 20)
-
-	if !bytes.Equal(got, expected) {
-		t.Errorf("TextPkcs7Padding(%q): got %q expected %q", src, got, expected)
-	}
-}
-
-func TestRandBytes(t *testing.T) {
-	a := RandBytes(16)
-	b := RandBytes(16)
-
-	if bytes.Equal(a, b) {
-		t.Errorf("TestRandBytes(16) gave equal results on successive calls: %v", a)
-	}
-
-	if len(a) != 16 {
-		t.Errorf("TestRandBytes(16) gave len of %d, expected 16", len(a))
 	}
 }
