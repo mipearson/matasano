@@ -26,6 +26,10 @@ func Pkcs7Padding(src []byte, blocksize int) []byte {
 	return dst
 }
 
+func StripPadding(src []byte) []byte {
+	return bytes.TrimRight(src, "\x04")
+}
+
 func EncryptAESECB(plaintext []byte, key []byte) []byte {
 	aes, err := aes.NewCipher(key)
 	CheckErr(err)

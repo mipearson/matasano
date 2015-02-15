@@ -89,7 +89,7 @@ func TestProfileFor(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		got := ProfileFor(c.email)
+		got := PersistentAESECBDecrypt(ProfileFor(c.email))
 		if !bytes.Equal(got, c.expected) {
 			t.Errorf("TestProfileFor(%q) got %q expected %q", c.email, got, c.expected)
 		}

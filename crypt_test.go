@@ -13,7 +13,12 @@ func TestPkcs7Padding(t *testing.T) {
 	got := Pkcs7Padding(src, 20)
 
 	if !bytes.Equal(got, expected) {
-		t.Errorf("TextPkcs7Padding(%q): got %q expected %q", src, got, expected)
+		t.Errorf("Pkcs7Padding(%q): got %q expected %q", src, got, expected)
+	}
+
+	got = StripPadding(expected)
+	if !bytes.Equal(got, src) {
+		t.Errorf("StripPadding(%q): got %q expected %q", src, got, src)
 	}
 }
 

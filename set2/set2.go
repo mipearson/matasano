@@ -44,12 +44,20 @@ func PersistentKey() []byte {
 	return CachedPersistentKey
 }
 
+func PersistentAESECBEncrypt(plaintext []byte) []byte {
+	return matasano.EncryptAESECB(matasano.Pkcs7Padding(plaintext, len(PersistentKey())), PersistentKey())
+}
+
+func PersistentAESECBDecrypt(ciphertext []byte) []byte {
+	return matasano.StripPadding(matasano.DecryptAESECB(ciphertext, PersistentKey()))
+}
+
 func Set2Challenge12Crypt(plaintext []byte) []byte {
 	suffix := matasano.Base64("Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK").Decode()
 
 	plaintext = bytes.Join([][]byte{plaintext, suffix}, []byte{})
 
-	return matasano.EncryptAESECB(matasano.Pkcs7Padding(plaintext, len(PersistentKey())), PersistentKey())
+	return PersistentAESECBEncrypt(plaintext)
 }
 
 func Set2Challenge12Decrypt() []byte {
@@ -115,9 +123,9 @@ func (p Profile) AsBytes() []byte {
 func ProfileFor(email []byte) []byte {
 	email = bytes.Replace(email, []byte("&"), []byte{}, -1)
 	email = bytes.Replace(email, []byte("="), []byte{}, -1)
-	return Profile{
+	return PersistentAESECBEncrypt(Profile{
 		"email": email,
 		"uid":   []byte("10"),
 		"role":  []byte("user"),
-	}.AsBytes()
+	}.AsBytes())
 }
