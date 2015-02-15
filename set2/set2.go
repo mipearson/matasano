@@ -129,3 +129,22 @@ func ProfileFor(email []byte) []byte {
 		"role":  []byte("user"),
 	}.AsBytes())
 }
+
+func (p Profile) IsAdmin() bool {
+	for k, v := range p {
+		if k == "role" && bytes.Equal(v, []byte("admin")) {
+			return true
+		}
+	}
+	return false
+}
+
+func BytesToProfile(src []byte) Profile {
+	parts := bytes.Split(src, []byte("&"))
+	profile := Profile{}
+	for _, p := range parts {
+		kv := bytes.SplitN(p, []byte("="), 2)
+		profile[string(kv[0])] = kv[1]
+	}
+	return profile
+}

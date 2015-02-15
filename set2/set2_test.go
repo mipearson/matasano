@@ -2,6 +2,7 @@ package set2
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
 )
 
@@ -76,22 +77,39 @@ func TestDiscoveryPrefix(t *testing.T) {
 func TestProfileFor(t *testing.T) {
 	cases := []struct {
 		email    []byte
-		expected []byte
+		expected Profile
 	}{
 		{
 			[]byte("foo@bar.com"),
-			[]byte("email=foo@bar.com&uid=10&role=user"),
+			Profile{"email": []byte("foo@bar.com"), "uid": []byte("10"), "role": []byte("user")},
 		},
 		{
 			[]byte("foo@bar.com&role=admin"),
-			[]byte("email=foo@bar.comroleadmin&uid=10&role=user"),
+			Profile{"email": []byte("foo@bar.comroleadmin"), "uid": []byte("10"), "role": []byte("user")},
 		},
 	}
 
 	for _, c := range cases {
-		got := PersistentAESECBDecrypt(ProfileFor(c.email))
-		if !bytes.Equal(got, c.expected) {
-			t.Errorf("TestProfileFor(%q) got %q expected %q", c.email, got, c.expected)
+		got := BytesToProfile(PersistentAESECBDecrypt(ProfileFor(c.email)))
+		if !reflect.DeepEqual(got, c.expected) {
+			t.Errorf("TestProfileFor(%q) got %v expected %v", c.email, got, c.expected)
+		}
+	}
+}
+
+func TestProfileIsAdmin(t *testing.T) {
+	cases := []struct {
+		profile  Profile
+		expected bool
+	}{
+		{Profile{"role": []byte("user")}, false},
+		{Profile{"role": []byte("admin")}, true},
+	}
+
+	for _, c := range cases {
+		got := c.profile.IsAdmin()
+		if got != c.expected {
+			t.Errorf("TestProfileIsAdmin(%v) got %v expected %v", c.profile, got, c.expected)
 		}
 	}
 }
