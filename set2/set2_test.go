@@ -72,3 +72,26 @@ func TestDiscoveryPrefix(t *testing.T) {
 		}
 	}
 }
+
+func TestProfileFor(t *testing.T) {
+	cases := []struct {
+		email    []byte
+		expected []byte
+	}{
+		{
+			[]byte("foo@bar.com"),
+			[]byte("email=foo@bar.com&uid=10&role=user"),
+		},
+		{
+			[]byte("foo@bar.com&role=admin"),
+			[]byte("email=foo@bar.comroleadmin&uid=10&role=user"),
+		},
+	}
+
+	for _, c := range cases {
+		got := ProfileFor(c.email)
+		if !bytes.Equal(got, c.expected) {
+			t.Errorf("TestProfileFor(%q) got %q expected %q", c.email, got, c.expected)
+		}
+	}
+}

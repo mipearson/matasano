@@ -2,6 +2,7 @@ package set2
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 
 	"github.com/mipearson/matasano"
@@ -99,4 +100,24 @@ func (e Encrypter) DiscoverNextByte(keysize int, known []byte) byte {
 	} else {
 		return byte(i - 1)
 	}
+}
+
+type Profile map[string][]byte
+
+func (p Profile) AsBytes() []byte {
+	parts := make([][]byte, 0)
+	for k, v := range p {
+		parts = append(parts, []byte(fmt.Sprintf("%s=%s", k, v)))
+	}
+	return bytes.Join(parts, []byte("&"))
+}
+
+func ProfileFor(email []byte) []byte {
+	email = bytes.Replace(email, []byte("&"), []byte{}, -1)
+	email = bytes.Replace(email, []byte("="), []byte{}, -1)
+	return Profile{
+		"email": email,
+		"uid":   []byte("10"),
+		"role":  []byte("user"),
+	}.AsBytes()
 }
