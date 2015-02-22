@@ -148,3 +148,21 @@ func BytesToProfile(src []byte) Profile {
 	}
 	return profile
 }
+
+func Set2Challenge13ForceAdminProfile() []byte {
+	keysize := Encrypter(ProfileFor).DiscoverKeysize()
+	offset := len("email=")
+	target := []byte("admin")
+
+	prefix := bytes.Repeat([]byte(" "), keysize-offset)
+	suffix := bytes.Repeat([]byte{4}, keysize-len(target))
+
+	profile := ProfileFor(bytes.Join([][]byte{prefix, target, suffix}, []byte{}))
+
+	adminCipher := profile[keysize : keysize*2]
+
+	paddingRequired := keysize - (len("user=&uid=10&role=") % keysize) - 1
+	profile = ProfileFor(bytes.Repeat([]byte(" "), paddingRequired))
+	copy(profile[len(profile)-keysize:], adminCipher)
+	return profile
+}

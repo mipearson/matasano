@@ -113,3 +113,12 @@ func TestProfileIsAdmin(t *testing.T) {
 		}
 	}
 }
+
+func TestSet2Challenge13ForceAdminProfile(t *testing.T) {
+	ciphertext := Set2Challenge13ForceAdminProfile()
+	profile := BytesToProfile(PersistentAESECBDecrypt(ciphertext))
+
+	if !profile.IsAdmin() {
+		t.Errorf("TestSet2Challenge13ForceAdminProfile: expected profile %v to be admin, profile is %s", profile, PersistentAESECBDecrypt(ciphertext))
+	}
+}
